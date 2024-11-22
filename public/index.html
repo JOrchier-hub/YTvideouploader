@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI YouTube Uploader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold mb-6 text-center">AI YouTube Uploader</h1>
+            
+            <div class="mb-6">
+                <div class="flex justify-center space-x-4">
+                    <button onclick="switchUploadType('file')" 
+                            id="fileBtn"
+                            class="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        File Upload
+                    </button>
+                    <button onclick="switchUploadType('url')"
+                            id="urlBtn"
+                            class="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        URL Upload
+                    </button>
+                </div>
+            </div>
+            
+            <form id="uploadForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Video Title</label>
+                    <input type="text" name="title" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                
+                <div id="fileUploadSection">
+                    <label class="block text-sm font-medium text-gray-700">Video File</label>
+                    <input type="file" name="video" accept="video/*"
+                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="mt-1 text-sm text-gray-500">Maximum file size: 128MB</p>
+                </div>
+
+                <div id="urlUploadSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Video URL</label>
+                    <input type="url" name="videoUrl"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           placeholder="Enter YouTube URL or direct video URL">
+                    <p class="mt-1 text-sm text-gray-500">Supports YouTube URLs and direct video URLs</p>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Upload Video
+                </button>
+            </form>
+
+            <div id="status" class="mt-4 hidden">
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                Processing your upload request...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchUploadType(type) {
+            const fileSection = document.getElementById('fileUploadSection');
+            const urlSection = document.getElementById('urlUploadSection');
+            const fileBtn = document.getElementById('fileBtn');
+            const urlBtn = document.getElementById('urlBtn');
+            
+            if (type === 'file') {
+                fileSection.classList.remove('hidden');
+                urlSection.classList.add('hidden');
+                fileBtn.classList.add('bg-blue-100');
+                urlBtn.classList.remove('bg-blue-100');
+                document.querySelector('input[name="video"]').required = true;
+                document.querySelector('input[name="videoUrl"]').required = false;
+            } else {
+                fileSection.classList.add('hidden');
+                urlSection.classList.remove('hidden');
+                fileBtn.classList.remove('bg-blue-100');
+                urlBtn.classList.add('bg-blue-100');
+                document.querySelector('input[name="video"]').required = false;
+                document.querySelector('input[name="videoUrl"]').required = true;
+            }
+        }
+
+        // Initialize the first tab
+        switchUploadType('file');
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const status = document.getElementById('status');
+            status.classList.remove('hidden');
+            
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    status.innerHTML = `
+                        <div class="bg-green-50 border-l-4 border-green-400 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-700">
+                                        Video uploaded successfully! Video ID: ${data.videoId}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.details || data.error || 'Upload failed');
+                }
+            } catch (error) {
+                status.innerHTML = `
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Error: ${error.message}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
